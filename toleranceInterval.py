@@ -57,7 +57,7 @@ def two_sided_toleranceInterval(
     # print("UL: ", UL)
     # print("LL: ", LL)
 
-    x_axis = np.arange(LL-(abs(LL)*0.2),UL+(abs(UL)*0.2),abs((UL+abs(UL)*0.2)/1000))
+    x_axis = np.arange(LL-(abs(LL)*0.5),UL+(abs(UL)*0.5),abs((UL+abs(UL)*0.5)/1000))
 
     font = {'family': 'serif',
         'color':  'black',
