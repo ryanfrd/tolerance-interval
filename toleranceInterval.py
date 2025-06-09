@@ -22,7 +22,10 @@ def readFile(filename,sheetname=None):
     return df,filename
 
 def two_sided_toleranceInterval(
-        data: pd.DataFrame,
+        data: pd.DataFrame = None,
+        x: float = None,
+        sd: float = None,
+        n: int = None,
         xlab: str = None,
         plot_title: str = None,
         p: float = 0.95,
@@ -33,9 +36,10 @@ def two_sided_toleranceInterval(
     # Assume normality and construct a tolerance interval based on 
     # a list of measurements 
 
-    x = np.mean(data)
-    sd = np.std(data).iloc[0]
-    n = len(data)
+    if data is not None:
+        x = np.mean(data)
+        sd = np.std(data).iloc[0]
+        n = len(data)
 
 
     Limits = False
@@ -47,6 +51,7 @@ def two_sided_toleranceInterval(
     chi = st.chi2.ppf(alpha,dof)
 
     k = Z*np.sqrt((dof*(1+(1/n)))/chi)
+    k_res = "N/A"
     # print(Z)
     # print(chi)
     # print(k)
@@ -68,7 +73,11 @@ def two_sided_toleranceInterval(
 
     fig,ax = plt.subplots(1,1)
 
-    plt.hist(data,density=True) # overlay the actual histogram
+    if data is not None:
+        plt.hist(data,density=True) # overlay the actual histogram
+    else:
+        x_axis = np.linspace(x - 4*sd, x + 4*sd, 1000)
+        plt.plot(x_axis, st.norm.pdf(x_axis, x, sd))
 
     plt.plot(x_axis, st.norm.pdf(x_axis,x,sd))
     plt.axvline(LL,color='g',linestyle ='--')
@@ -79,6 +88,8 @@ def two_sided_toleranceInterval(
         plt.axvline(lower_lim,color='r',linestyle='--',label='Spec Limits')
         xlimits.append(lower_lim)
         xlimits.append(upper_lim)
+
+        k_res = (upper_lim - lower_lim)/sd
     min_xlim = min(xlimits)
     max_xlim = max(xlimits)
     range_xlim = max_xlim-min_xlim
@@ -89,13 +100,16 @@ def two_sided_toleranceInterval(
     t = f"With {str((1-alpha)*100)}% confidence, {p*100}% of the population will fall within [{round(LL,2)} , {round(UL,2)}]"
     plt.legend(loc = 'upper right')
 
-    header = ['mean','sd','sample size','alpha','p','Z','Chi^2','k','UL','LL',]
-    out_df = pd.DataFrame([[x,sd,n,alpha,p,Z,chi,k,UL,LL]],columns=header)
+    header = ['mean','sd','sample size','alpha','p','Z','Chi^2','kcrit','k_res','UL','LL',]
+    out_df = pd.DataFrame([[x,sd,n,alpha,p,Z,chi,k,k_res,UL,LL]],columns=header)
 
     return (fig,out_df,t)
 
 def one_sided_toleranceInterval(
         data: pd.DataFrame,
+        x: float = None,
+        sd: float = None,
+        n: int = None,
         xlab: str = None,
         plot_title: str = None,
         p: float = 0.95,
@@ -104,9 +118,10 @@ def one_sided_toleranceInterval(
         limit: float = None
         )->tuple[plt.Figure,pd.DataFrame]: 
     
-    x = np.mean(data)
-    sd = np.std(data).iloc[0]
-    n = len(data)
+    if data is not None:
+        x = np.mean(data)
+        sd = np.std(data).iloc[0]
+        n = len(data)
 
     Limits = False
     if limit is not None:
@@ -118,6 +133,7 @@ def one_sided_toleranceInterval(
     a = 1-((za**2)/(2*(n-1)))
     b = (Z**2) - ((za**2)/n)
     k = (Z + np.sqrt((Z**2)-a*b))/a
+    k_res = "N/A"
 
     UL = x+sd*k
     LL = x-sd*k
@@ -140,7 +156,11 @@ def one_sided_toleranceInterval(
 
     fig,ax = plt.subplots(1,1)
 
-    plt.hist(data,density=True) # overlay the actual histogram
+    if data is not None:
+        plt.hist(data,density=True) # overlay the actual histogram
+    else:
+        x_axis = np.linspace(x - 4*sd, x + 4*sd, 1000)
+        plt.plot(x_axis, st.norm.pdf(x_axis, x, sd))
 
     plt.plot(x_axis, st.norm.pdf(x_axis,x,sd))
     plt.axvline(tol,color='g',linestyle='--',label='Tolerance')
@@ -148,6 +168,8 @@ def one_sided_toleranceInterval(
     if Limits:
         plt.axvline(limit,color='r',linestyle='--',label='Spec Limits')
         xlimits.append(tol)
+
+        k_res = abs(x-limit)/sd
     min_xlim = min(xlimits)
     max_xlim = max(xlimits)
     range_xlim = max_xlim-min_xlim
@@ -159,12 +181,12 @@ def one_sided_toleranceInterval(
     
     if "Upper" in up_low:
         t = f"With {str((1-alpha)*100)}% confidence, {p*100}% of the population will not exceed {round(tol,2)}"
-        header = ['mean','sd','sample size','alpha','p','Z','k','UL']
-        out_df = pd.DataFrame([[x,sd,n,alpha,p,Z,k,UL]],columns=header)
+        header = ['mean','sd','sample size','alpha','p','Z','k-crit','k_res','UL']
+        out_df = pd.DataFrame([[x,sd,n,alpha,p,Z,k,k_res,UL]],columns=header)
     else:
         t = f"With {str((1-alpha)*100)}% confidence, {p*100}% of the population will not fall below {round(tol,2)}"
-        header = ['mean','sd','sample size','alpha','p','Z','k','LL']
-        out_df = pd.DataFrame([[x,sd,n,alpha,p,Z,k,LL]],columns=header)
+        header = ['mean','sd','sample size','alpha','p','Z','k-crit','k_res','LL']
+        out_df = pd.DataFrame([[x,sd,n,alpha,p,Z,k,k_res,LL]],columns=header)
 
     return (fig,out_df,t)
 

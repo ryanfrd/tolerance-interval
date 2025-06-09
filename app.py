@@ -36,6 +36,18 @@ if "sided" not in st.session_state:
 if "up_low" not in st.session_state:
     st.session_state.up_low = "Upper Limit"
 
+if "data_mean" not in st.session_state:
+    st.session_state.data_mean = None
+
+if "data_sd" not in st.session_state:
+    st.session_state.data_sd = None
+
+if "data_n" not in st.session_state:
+    st.session_state.data_n = None
+
+if "data_type" not in st.session_state:
+    st.session_state.data_type = "Raw Data"
+
 def update_progress(progress):
     st.session_state.progress = progress
     # st.write(f"PROGRESS UPDATE: {st.session_state.progress}")
@@ -64,10 +76,8 @@ def update_data(data)->pd.DataFrame:
 def update_limits(limits):
     if limits == "Yes":
         st.session_state.limits = True
-        st.write(f"Witin function {st.session_state.limits}")
     else:
         st.session_state.limits = False
-        st.write(f"in da func {st.session_state.limits}")
 
 def update_analyze():
     st.session_state.analyze = True
@@ -76,6 +86,10 @@ def reset_analyze():
     st.session_state.analyze=False
 
 st.title("Tolerance Interval Constructor")
+st.write("This app will contruct a tolerance interval (NIST Engineering Statistics Handbook §7.2.6.3) based on the data you provide.")
+st.write("If providing raw data, your data should be either .csv or .xlsx format, contain a single column of data with a header containing the name and units of the measurement.")
+st.write("If providing summary statistics, you must know the mean, standard deviation, and sample size of the data.")
+
 
 clicked = st.button("Select a folder to store results")
 if clicked:
@@ -91,11 +105,52 @@ else:
 
 if st.session_state.progress > 0:
 
-    data = st.file_uploader("Upload a .csv or .xlsx file containing your data")
+    data_type = st.selectbox("Construct tolerance interval from:",["Raw Data","Summary Statistics"],key='data_type')
 
-    if data is not None:
-        df = update_data(data)
-        st.dataframe(df)
+    if st.session_state.data_type == "Raw Data":
+
+        data = st.file_uploader("Upload a .csv or .xlsx file containing your data")
+
+        if data is not None:
+            df = update_data(data)
+            st.dataframe(df)
+
+            xlab = df.columns[0]
+            plot_title = data.name.rsplit(".",1)[0]
+
+            # ensure the summary stats are none if providing raw data
+            data_mean = None
+            data_sd = None
+            data_n = None
+
+    elif st.session_state.data_type == "Summary Statistics":
+        # ensure the dataframe is none if providing summary statistics
+        df = None
+
+        data_mean = st.number_input(
+            "Mean",
+            value=0.0,
+            key='data_mean',
+        )
+
+        data_sd = st.number_input(
+            "Standard Deviation",
+            value=1.0,
+            key='data_sd',
+        )
+
+        data_n = st.number_input(
+            "Sample Size",
+            min_value=1,
+            value=30,
+            key='data_n',
+        )
+
+        xlab = st.text_input("Label for the data",value="Data (units)")
+        plot_title = st.text_input("Title for the plot",value="Tolerance Interval Plot")
+
+        if data_mean is not None and data_sd is not None and data_n is not None:
+            update_progress(2)
 
 if st.session_state.progress > 1:
     st.write("Enter parameters of the tolerance interval")
@@ -152,8 +207,11 @@ if st.session_state.progress > 1:
         if st.session_state.progress > 2 and st.session_state.sided == "Two Sided":
             result = two_sided_toleranceInterval(
                 data = df,
-                xlab=df.columns[0],
-                plot_title=data.name.rsplit(".",1)[0],
+                x=data_mean,
+                sd=data_sd,
+                n=data_n,
+                xlab=xlab,
+                plot_title=plot_title,
                 p=proportion,
                 alpha=alpha,
                 upper_lim=upper_limit,
@@ -172,8 +230,11 @@ if st.session_state.progress > 1:
         if st.session_state.progress > 2 and "One Sided" in st.session_state.sided:
             result = one_sided_toleranceInterval(
                 data = df,
-                xlab=df.columns[0],
-                plot_title=data.name.rsplit(".",1)[0],
+                x=data_mean,
+                sd=data_sd,
+                n=data_n,
+                xlab=xlab,
+                plot_title=plot_title,
                 p=proportion,
                 alpha=alpha,
                 up_low=st.session_state.sided,
