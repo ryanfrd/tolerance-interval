@@ -258,31 +258,24 @@ if st.session_state.progress > 1:
 
     if st.session_state.analyze:
         update_progress(3)
-        if st.session_state.progress > 2 and st.session_state.sided == "Two Sided":
-            result = two_sided_toleranceInterval(
-                data = df,
-                x=data_mean,
-                sd=data_sd,
-                n=data_n,
-                xlab=xlab,
-                plot_title=plot_title,
-                p=proportion,
-                alpha=alpha,
-                upper_lim=upper_limit,
-                lower_lim=lower_limit
-            )
-        
-            st.pyplot(result[0])
-            st.dataframe(result[1])
-            st.write(result[2])
+        if st.session_state.progress > 2:
 
-            save_results = st.button("Save Results")
-            if save_results:
-                savePlot(os.path.join(st.session_state.result_folder,f"{data.name.rsplit('.',1)[0]} {st.session_state.sided} Tolerance Interval_alpha {alpha}_proportion {proportion}"))
-                result[1].to_csv(os.path.join(st.session_state.result_folder,f"{data.name.rsplit('.',1)[0]} {st.session_state.sided} Tolerance Interval Summary_alpha {alpha}_proportion {proportion}.csv"))
+            if st.session_state.sided == "Two Sided":
+                result = two_sided_toleranceInterval(
+                    data = df,
+                    x=data_mean,
+                    sd=data_sd,
+                    n=data_n,
+                    xlab=xlab,
+                    plot_title=plot_title,
+                    p=proportion,
+                    alpha=alpha,
+                    upper_lim=upper_limit,
+                    lower_lim=lower_limit
+                )
 
-        if st.session_state.progress > 2 and "One Sided" in st.session_state.sided:
-            result = one_sided_toleranceInterval(
+            elif "One Sided" in st.session_state.sided:
+                result = one_sided_toleranceInterval(
                 data = df,
                 x=data_mean,
                 sd=data_sd,
@@ -293,7 +286,7 @@ if st.session_state.progress > 1:
                 alpha=alpha,
                 up_low=st.session_state.sided,
                 limit=upper_limit
-            )
+                )
         
             st.pyplot(result[0])
             st.dataframe(result[1])
@@ -301,5 +294,6 @@ if st.session_state.progress > 1:
 
             save_results = st.button("Save Results")
             if save_results:
-                savePlot(os.path.join(st.session_state.result_folder,f"{data.name.rsplit('.',1)[0]} {st.session_state.sided} Tolerance Interval_alpha {alpha}_proportion {proportion}"))
-                result[1].to_csv(os.path.join(st.session_state.result_folder,f"{data.name.rsplit('.',1)[0]} {st.session_state.sided} Tolerance Interval Summary_alpha {alpha}_proportion {proportion}.csv"))
+                savePlot(os.path.join(st.session_state.result_folder,f"{plot_title} {st.session_state.sided} Tolerance Interval_alpha {alpha}_proportion {proportion}"))
+                result[1].to_csv(os.path.join(st.session_state.result_folder,f"{plot_title} {st.session_state.sided} Tolerance Interval Summary_alpha {alpha}_proportion {proportion}.csv"))
+                st.success("Results saved!")
