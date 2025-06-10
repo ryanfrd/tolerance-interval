@@ -8,5 +8,5 @@ import matplotlib.pyplot as plt
 def savePlot(figname,w=11,h=8):
     fig = plt.gcf()
     fig.set_size_inches(w,h)
-    plt.savefig(figname + ".jpg", dpi = 600)
+    plt.savefig(figname + ".png", dpi = 600)
     plt.close()
