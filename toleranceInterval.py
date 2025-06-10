@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as st
-from datetime import datetime 
-import csv
 import os
 
 # A tolerance interval is used to define what proportion, p, of a population would fall within a range with alpha level of confidence.
@@ -33,8 +31,6 @@ def two_sided_toleranceInterval(
         upper_lim: float =None,
         lower_lim: float =None
         )->tuple[plt.Figure,pd.DataFrame]:
-    # Assume normality and construct a tolerance interval based on 
-    # a list of measurements 
 
     if data is not None:
         x = np.mean(data)
@@ -52,15 +48,9 @@ def two_sided_toleranceInterval(
 
     k = Z*np.sqrt((dof*(1+(1/n)))/chi)
     k_res = "N/A"
-    # print(Z)
-    # print(chi)
-    # print(k)
 
     UL = x+sd*k
     LL = x-sd*k
-
-    # print("UL: ", UL)
-    # print("LL: ", LL)
 
     x_axis = np.arange(LL-(abs(LL)*0.5),UL+(abs(UL)*0.5),abs((UL+abs(UL)*0.5)/1000))
 
@@ -169,7 +159,7 @@ def one_sided_toleranceInterval(
         plt.axvline(limit,color='r',linestyle='--',label='Spec Limits')
         xlimits.append(tol)
 
-        k_res = abs(x-limit)/sd
+        k_res = (x-limit)/sd
     min_xlim = min(xlimits)
     max_xlim = max(xlimits)
     range_xlim = max_xlim-min_xlim
@@ -196,24 +186,4 @@ if __name__ == "__main__":
     result_folder = "result\\folder"
     os.makedirs(result_folder,exist_ok=True)
     data,filename = readFile(filename)
-
-    # result = two_sided_toleranceInterval(
-    # data = data,
-    # xlab=data.columns[0],
-    # plot_title=filename.rsplit(".",1)[0],
-    # p=0.99,
-    # alpha=0.05,
-    # upper_lim=75.0,
-    # lower_lim=25.0
-    #         )
-    
-    result = one_sided_toleranceInterval(
-    data = data,
-    xlab=data.columns[0],
-    plot_title=filename.rsplit(".",1)[0],
-    p=0.99,
-    alpha=0.05,
-    upper_lim=75.0,
-    lower_lim=None
-            )
 

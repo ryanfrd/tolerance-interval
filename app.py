@@ -1,4 +1,5 @@
 import os
+import sys
 import streamlit as st
 import pandas as pd
 from basic.savePlot import savePlot
@@ -48,6 +49,10 @@ if "data_n" not in st.session_state:
 if "data_type" not in st.session_state:
     st.session_state.data_type = "Raw Data"
 
+def is_local():
+    # Simple check: if running in Streamlit Cloud, 'HOME' is '/app'
+    return not (os.environ.get("HOME", "").startswith("/app") or "streamlit" in sys.argv[0])
+
 def update_progress(progress):
     st.session_state.progress = progress
     # st.write(f"PROGRESS UPDATE: {st.session_state.progress}")
@@ -85,6 +90,15 @@ def update_analyze():
 def reset_analyze():
     st.session_state.analyze=False
 
+def back_to_top():
+    reset_analyze()
+    update_progress(1)
+
+if is_local():
+    save_method = "tkinter"
+else:
+    save_method = "download"
+
 st.title("📊Tolerance Interval Constructor")
 st.write("This app will contruct a tolerance interval based on the data and parameters you provide.")
 st.write("If providing raw data, your data should be either .csv or .xlsx format, contain a single column of data with a header containing the name and units of the measurement.")
@@ -100,11 +114,11 @@ with st.expander("📐Tolerance Interval Equations"):
     st.write("Where:")
     st.latex(r"\nu = n - 1")
     st.latex(r"z_p = \text{critical value of the standard normal distribution at } \frac{1 + p}{2}")
-    st.latex(r"\chi^2_{1-\alpha, \nu} = \text{critical value of the chi-square distribution at } 1 - \alpha \text{ with } \nu \text{ degrees of freedom}")
+    st.latex(r"\chi^2_{1-\alpha, \nu} = \text{critical value of the chi-square distribution at } 1 - \alpha \text{ with } \\ \nu \text{ degrees of freedom}")
 
     st.write("The two-sided tolerance interval is given by:")
     st.latex(r"""
-    \bar{x} \pm k \cdot s
+    \bar{x} \pm k_2 \cdot s
     """)
 
     st.write("Where:")
@@ -128,7 +142,7 @@ with st.expander("📐Tolerance Interval Equations"):
 
     st.write("The one-sided tolerance interval is given by:")
     st.latex(r"""
-    \bar{x} \pm k \cdot s
+    \bar{x} \pm k_1 \cdot s
     """)
     st.write("Use + for upper bound, − for lower bound.")
 
@@ -145,66 +159,56 @@ with st.expander("📚 References"):
     [https://www.itl.nist.gov/div898/handbook/](https://www.itl.nist.gov/div898/handbook/)
     """)
 
-clicked = st.button("Select a folder to store results")
-if clicked:
-    result_folder = choose_folder()
-    update_folder(result_folder)
-    update_clicked()
+data_type = st.selectbox(
+    "Construct tolerance interval from:",["Raw Data","Summary Statistics"],
+    on_change=back_to_top,
+    key='data_type'
+    )
 
-if st.session_state.result_folder != '':
-    st.success(f"Folder selected: {st.session_state.result_folder}")
-    update_progress(1)
-else:
-    st.warning("Please select a folder")
+if st.session_state.data_type == "Raw Data":
 
-if st.session_state.progress > 0:
+    data = st.file_uploader("Upload a .csv or .xlsx file containing your data")
 
-    data_type = st.selectbox("Construct tolerance interval from:",["Raw Data","Summary Statistics"],key='data_type')
+    if data is not None:
+        df = update_data(data)
+        st.dataframe(df)
 
-    if st.session_state.data_type == "Raw Data":
+        xlab = df.columns[0]
+        plot_title = data.name.rsplit(".",1)[0]
 
-        data = st.file_uploader("Upload a .csv or .xlsx file containing your data")
+        # ensure the summary stats are none if providing raw data
+        data_mean = None
+        data_sd = None
+        data_n = None
 
-        if data is not None:
-            df = update_data(data)
-            st.dataframe(df)
+elif st.session_state.data_type == "Summary Statistics":
+    # ensure the dataframe is none if providing summary statistics
+    df = None
 
-            xlab = df.columns[0]
-            plot_title = data.name.rsplit(".",1)[0]
+    data_mean = st.number_input(
+        "Mean",
+        value=0.0,
+        key='data_mean',
+    )
 
-            # ensure the summary stats are none if providing raw data
-            data_mean = None
-            data_sd = None
-            data_n = None
+    data_sd = st.number_input(
+        "Standard Deviation",
+        value=1.0,
+        key='data_sd',
+    )
 
-    elif st.session_state.data_type == "Summary Statistics":
-        # ensure the dataframe is none if providing summary statistics
-        df = None
+    data_n = st.number_input(
+        "Sample Size",
+        min_value=1,
+        value=30,
+        key='data_n',
+    )
 
-        data_mean = st.number_input(
-            "Mean",
-            value=0.0,
-            key='data_mean',
-        )
+    xlab = st.text_input("Label for the data",value="Data (units)")
+    plot_title = st.text_input("Title for the plot",value="Tolerance Interval Plot")
 
-        data_sd = st.number_input(
-            "Standard Deviation",
-            value=1.0,
-            key='data_sd',
-        )
-
-        data_n = st.number_input(
-            "Sample Size",
-            min_value=1,
-            value=30,
-            key='data_n',
-        )
-
-        xlab = st.text_input("Label for the data",value="Data (units)")
-        plot_title = st.text_input("Title for the plot",value="Tolerance Interval Plot")
-
-        if data_mean is not None and data_sd is not None and data_n is not None:
-            update_progress(2)
+    if data_mean is not None and data_sd is not None and data_n is not None:
+        update_progress(2)
 
 if st.session_state.progress > 1:
     st.write("Enter parameters of the tolerance interval")
@@ -292,8 +296,36 @@ if st.session_state.progress > 1:
             st.dataframe(result[1])
             st.write(result[2])
 
-            save_results = st.button("Save Results")
-            if save_results:
-                savePlot(os.path.join(st.session_state.result_folder,f"{plot_title} {st.session_state.sided} Tolerance Interval_alpha {alpha}_proportion {proportion}"))
-                result[1].to_csv(os.path.join(st.session_state.result_folder,f"{plot_title} {st.session_state.sided} Tolerance Interval Summary_alpha {alpha}_proportion {proportion}.csv"))
-                st.success("Results saved!")
+            if save_method == "tkinter": # Choosing the folder is preferred in local mode
+                save_results = st.button("Save Results")
+                if save_results:
+                    result_folder = choose_folder()
+                    update_folder(result_folder)
+                    update_clicked()
+
+                    if st.session_state.result_folder != '':
+                        savePlot(os.path.join(st.session_state.result_folder,f"{plot_title} {st.session_state.sided} Tolerance Interval_alpha {alpha}_proportion {proportion}"))
+                        result[1].to_csv(os.path.join(st.session_state.result_folder,f"{plot_title} {st.session_state.sided} Tolerance Interval Summary_alpha {alpha}_proportion {proportion}.csv"))
+                        st.success(f"Results saved to {st.session_state.result_folder}")
+                    else:
+                        st.warning("Results not saved. Please select a folder.")
+            else:
+                # Use st.download_button for browser download
+                import io
+                buf = io.BytesIO()
+                result[0].savefig(buf, format="png")
+                buf.seek(0)
+                st.download_button(
+                    label="Download plot as PNG",
+                    data=buf,
+                    file_name=f"{plot_title}_{st.session_state.sided}_Tolerance_Interval.png",
+                    mime="image/png"
+                )
+                csv = result[1].to_csv(index=False)
+                st.download_button(
+                    label="Download results as CSV",
+                    data=csv,
+                    file_name=f"{plot_title}_{st.session_state.sided}_Tolerance_Interval.csv",
+                    mime="text/csv"
+                )
+                
