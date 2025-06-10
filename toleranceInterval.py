@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import scipy.stats as st
 import os
 
-# A tolerance interval is used to define what proportion, p, of a population would fall within a range with alpha level of confidence.
 # More information --> https://www.itl.nist.gov/div898/handbook/prc/section2/prc263.htm
 # https://www.bioprocessonline.com/doc/how-to-establish-sample-sizes-for-process-validation-using-statistical-tolerance-intervals-0001
 
