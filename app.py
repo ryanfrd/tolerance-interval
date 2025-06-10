@@ -89,6 +89,8 @@ def back_to_top():
     reset_analyze()
     update_progress(1)
 
+st.set_page_config(page_title="Tolerance Interval",page_icon="📊")
+
 st.title("📊Tolerance Interval Constructor")
 st.write("This app will contruct a tolerance interval based on the data and parameters you provide.")
 st.write("If providing raw data, your data should be either .csv or .xlsx format, contain a single column of data with a header containing the name and units of the measurement.")
