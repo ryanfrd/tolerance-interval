@@ -85,11 +85,65 @@ def update_analyze():
 def reset_analyze():
     st.session_state.analyze=False
 
-st.title("Tolerance Interval Constructor")
-st.write("This app will contruct a tolerance interval (NIST Engineering Statistics Handbook §7.2.6.3) based on the data you provide.")
+st.title("📊Tolerance Interval Constructor")
+st.write("This app will contruct a tolerance interval based on the data and parameters you provide.")
 st.write("If providing raw data, your data should be either .csv or .xlsx format, contain a single column of data with a header containing the name and units of the measurement.")
 st.write("If providing summary statistics, you must know the mean, standard deviation, and sample size of the data.")
+st.write("Tolerance intervals are constructed per the NIST Engineering Statistics Handbook, §7.2.6.3")
 
+with st.expander("📐Tolerance Interval Equations"):
+
+    st.subheader("Two-Sided Tolerance Interval (Howe, 1969)")
+    st.latex(r"""
+    k_2 = \sqrt{\frac{\nu \left(1 + \frac{1}{n}\right) z_p^2}{\chi^2_{1-\alpha, \nu}}}
+    """)
+    st.write("Where:")
+    st.latex(r"\nu = n - 1")
+    st.latex(r"z_p = \text{critical value of the standard normal distribution at } \frac{1 + p}{2}")
+    st.latex(r"\chi^2_{1-\alpha, \nu} = \text{critical value of the chi-square distribution at } 1 - \alpha \text{ with } \nu \text{ degrees of freedom}")
+
+    st.write("The two-sided tolerance interval is given by:")
+    st.latex(r"""
+    \bar{x} \pm k \cdot s
+    """)
+
+    st.write("Where:")
+    st.latex(r"\bar{x} = \text{sample mean}")
+    st.latex(r"s = \text{sample standard deviation}")
+    st.latex(r"k = \text{tolerance factor from NIST tables or equations}")
+
+    st.subheader("One-Sided Tolerance Interval (Natrella, 1963)")
+    st.latex(r"""
+    a = 1 - \frac{z_\alpha^2}{2(n-1)}
+    """)
+    st.latex(r"""
+    b = z_p^2 - \frac{z_\alpha^2}{n}
+    """)
+    st.latex(r"""
+    k_1 = \frac{z_p + \sqrt{z_p^2 - ab}}{a}
+    """)
+    st.write("Where:")
+    st.latex(r"z_\alpha = \text{critical value of the standard normal distribution at } 1 - \alpha")
+    st.latex(r"z_p = \text{critical value of the standard normal distribution at } p")
+
+    st.write("The one-sided tolerance interval is given by:")
+    st.latex(r"""
+    \bar{x} \pm k \cdot s
+    """)
+    st.write("Use + for upper bound, − for lower bound.")
+
+with st.expander("📚 References"):
+    st.markdown("""
+    **Howe, W. G.** (1969). *Two-sided Tolerance Limits for Normal Populations - Some Improvements*.  
+    Journal of the American Statistical Association, **64**, pages 610–620.
+
+    **Natrella, M. G.** (1963). *Experimental Statistics* (NBS Handbook 91).  
+    National Bureau of Standards, U.S. Department of Commerce.
+
+    **NIST/SEMATECH.** (2012). *e-Handbook of Statistical Methods*.  
+    National Institute of Standards and Technology, Gaithersburg, MD.
+    [https://www.itl.nist.gov/div898/handbook/](https://www.itl.nist.gov/div898/handbook/)
+    """)
 
 clicked = st.button("Select a folder to store results")
 if clicked:
