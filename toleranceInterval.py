@@ -30,7 +30,7 @@ def two_sided_toleranceInterval(
 
     if data is not None:
         x = np.mean(data)
-        sd = np.std(data).iloc[0]
+        sd = np.std(data,ddof=1).iloc[0]
         n = len(data)
 
 
@@ -106,7 +106,7 @@ def one_sided_toleranceInterval(
     
     if data is not None:
         x = np.mean(data)
-        sd = np.std(data).iloc[0]
+        sd = np.std(data,ddof=1).iloc[0]
         n = len(data)
 
     Limits = False
