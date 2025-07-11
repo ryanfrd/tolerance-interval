@@ -106,7 +106,7 @@ def one_sided_toleranceInterval(
     
     if data is not None:
         x = np.mean(data)
-        sd = np.std(data,ddof=1).iloc[0]
+        sd = np.std(data,ddof=1)
         n = len(data)
 
     Limits = False
@@ -155,7 +155,10 @@ def one_sided_toleranceInterval(
         plt.axvline(limit,color='r',linestyle='--',label='Spec Limits')
         xlimits.append(tol)
 
-        k_res = (x-limit)/sd
+        if "Upper" in up_low:
+            k_res = (limit - x)/sd
+        elif "Lower" in up_low:
+            k_res = (x-limit)/sd
     min_xlim = min(xlimits)
     max_xlim = max(xlimits)
     range_xlim = max_xlim-min_xlim
