@@ -106,7 +106,7 @@ def one_sided_toleranceInterval(
     
     if data is not None:
         x = np.mean(data)
-        sd = np.std(data,ddof=1)
+        sd = np.std(data,ddof=1).iloc[0]
         n = len(data)
 
     Limits = False
@@ -121,8 +121,8 @@ def one_sided_toleranceInterval(
     k = (Z + np.sqrt((Z**2)-a*b))/a
     k_res = "N/A"
 
-    UL = x+sd*k
-    LL = x-sd*k
+    UL = (x+sd*k)
+    LL = (x-sd*k)
 
     if "Upper" in up_low:
         tol = UL
